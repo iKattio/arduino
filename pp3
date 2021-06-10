@@ -1,16 +1,24 @@
 #include <SoftwareSerial.h>
 
+
 SoftwareSerial outro(2,3);
 String msg;
-int sorteio, palpite, led1 = 9, led2 = 12;
+int sorteio, palpite, led1 = 9, led2 = 12, atualizaTempo = 25;
+unsigned long temp = millis();
+char c;
 
 void setup(){
-    pinMode(9, OUTPUT);
-    pinMode(12, OUTPUT);
+    pinMode(2, INPUT);
+    pinMode(3, OUTPUT);
+    pinMode(led1, OUTPUT);
+    pinMode(led2, OUTPUT);
+    
     Serial.begin(9600);
     outro.begin(1400);
+    
     randomSeed(analogRead(A0));
-    sorteio = random(1, 51);
+    
+    aguardararduino();  
 }
 
 void chat(){
@@ -52,39 +60,42 @@ void chat(){
     } 
     }
 
-void pisca(){
-   chat();
-    if(!outro.available()){
-        while(!outro.available()){
-            digitalWrite(9, 1);
-            delay(500);
-            digitalWrite(9, 0);
-            digitalWrite(12, 1);
-            delay(500);
-            digitalWrite(12, 0);
-            chat();
-        }
-    } 
-}
-
-void parar(){
-    int i;
-    for(i=0;i<5;i++){
-        digitalWrite(9,1);
-        digitalWrite(12,1);
-        delay(500);
-        digitalWrite(9,0);
-        digitalWrite(12,0);
-        delay(500); 
+void aguardararduino(){
+  Serial.flush();
+  outro.flush();
+  sorteio = random(1, 51);
+  while (true) {
+    if (millis() - temp <= atualizaTempo * 10) {
+      digitalWrite(led1, LOW);
+      digitalWrite(led2, HIGH);
+    } else {
+      digitalWrite(led1, HIGH);
+      digitalWrite(led2, LOW);
     }
-}
-
-void aguardaraduino(){
-    pisca();
-    parar();
+    if (millis() - temp > atualizaTempo * 10 * 2) {
+      temp = millis();
+    }
+    if (Serial.available() == 1) {
+      c = Serial.read();
+      outro.print(c);
+    }
+    if (outro.available() == 1) {
+      c = outro.read();
+      if (c == '&') {
+        for (int y = 0; y < 5; y++) {
+          digitalWrite(led1, HIGH);
+          digitalWrite(led2, HIGH);
+          delay(250);
+          digitalWrite(led1, LOW);
+          digitalWrite(led2, LOW);
+          delay(250);
+        }
+        break;
+      }
+    }
+  }
 }
 
 void loop(){
-    aguardaraduino();
-    chat();
+  chat();
 }
