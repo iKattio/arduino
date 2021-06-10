@@ -1,0 +1,90 @@
+#include <SoftwareSerial.h>
+
+SoftwareSerial outro(2,3);
+String msg;
+int sorteio, palpite, led1 = 9, led2 = 12;
+
+void setup(){
+    pinMode(9, OUTPUT);
+    pinMode(12, OUTPUT);
+    Serial.begin(9600);
+    outro.begin(1400);
+    randomSeed(analogRead(A0));
+    sorteio = random(1, 51);
+}
+
+void chat(){
+    if(Serial.available()){
+        msg = Serial.readStringUntil('\n');
+        String converter = msg.substring(0, 1); 
+        if(converter == "$"){
+            palpite = msg.substring(1).toInt();
+            if(palpite == sorteio){
+                Serial.println("Acertou! TMJ");
+            }else
+  	        	if(palpite > sorteio){
+  		        	Serial.println("Errou! Menos meu mano, menos");  
+            }else
+  	        	if(palpite < sorteio){
+  		        	Serial.println("Errou! Mais meu mano, mais");
+            }
+        }else{
+                outro.println(msg);
+            }
+    }
+    if(outro.available()){
+        msg = outro.readStringUntil('\n');
+        String converter = msg.substring(0, 1);  
+        if(converter == "$"){
+            palpite = msg.substring(1).toInt();
+            if(palpite == sorteio){
+     	        outro.println("Acertou! JJ");
+            }else
+  	        	if(palpite > sorteio){
+  		        	outro.println("Errou! Menos meu mano, menos");  
+            }else
+  	        	if(palpite < sorteio){
+  		        	outro.println("Errou! Mais meu mano, mais");  
+            } 
+        }else{
+                Serial.println(msg);
+            }
+    } 
+    }
+
+void pisca(){
+   chat();
+    if(!outro.available()){
+        while(!outro.available()){
+            digitalWrite(9, 1);
+            delay(500);
+            digitalWrite(9, 0);
+            digitalWrite(12, 1);
+            delay(500);
+            digitalWrite(12, 0);
+            chat();
+        }
+    } 
+}
+
+void parar(){
+    int i;
+    for(i=0;i<5;i++){
+        digitalWrite(9,1);
+        digitalWrite(12,1);
+        delay(500);
+        digitalWrite(9,0);
+        digitalWrite(12,0);
+        delay(500); 
+    }
+}
+
+void aguardaraduino(){
+    pisca();
+    parar();
+}
+
+void loop(){
+    aguardaraduino();
+    chat();
+}
